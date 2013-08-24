@@ -1,3 +1,6 @@
+Peano
+Specif
+Datatypes
 Table
 Mlutil
 Modutil
@@ -6,6 +9,7 @@ Common
 Ocaml
 Haskell
 Scheme
+Coreerlang
 Extract_env
 G_extraction
 Extraction_plugin_mod

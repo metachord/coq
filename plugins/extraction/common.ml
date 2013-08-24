@@ -309,11 +309,13 @@ let reset_renaming_tables flag =
 let modular_rename k id =
   let s = string_of_id id in
   let prefix,is_ok =
-    if upperkind k then "Coq_",is_upper else "coq_",is_lower
+    if lang () <> CoreErlang
+     then if upperkind k then "Coq_",is_upper else "coq_",is_lower
+     else "_",(fun x -> true)
   in
   if not (is_ok s) ||
-    (Idset.mem id (get_keywords ())) ||
-    (String.length s >= 4 && String.sub s 0 4 = prefix)
+     (Idset.mem id (get_keywords ())) ||
+     (String.length s >= 4 && String.sub s 0 4 = prefix)
   then prefix ^ s
   else s
 
@@ -371,17 +373,14 @@ let ref_renaming_fun (k,r) =
   let mp = modpath_of_r r in
   let l = mp_renaming mp in
   let l = if lang () <> Ocaml && not (modular ()) then [""] else l in
-  let s =
-    let idg = safe_basename_of_global r in
-    if l = [""] (* this happens only at toplevel of the monolithic case *)
-    then
-      let globs = Idset.elements (get_global_ids ()) in
-      let id = next_ident_away (kindcase_id k idg) globs in
-      string_of_id id
-    else modular_rename k idg
-  in
-  add_global_ids (id_of_string s);
-  s::l
+  let s = let idg = safe_basename_of_global r
+          in if l = [""] (* this happens only at toplevel of the monolithic case *)
+              then let globs = Idset.elements (get_global_ids ()) in
+                   let id = next_ident_away (kindcase_id k idg) globs
+                   in string_of_id id
+              else modular_rename k idg
+  in add_global_ids (id_of_string s)
+   ; s::l
 
 (* Cached version of the last function *)
 
@@ -552,6 +551,24 @@ let pp_haskell_gen k mp rls = match rls with
     let prf = if base_mp mp <> top_visible_mp () then s ^ "." else "" in
     prf ^ str
 
+(* For Core Erlang, we guess this will works *)
+let rec dequalify = function
+  | [] -> assert false
+  | [s] -> s
+  | s::rls' -> dequalify rls'
+
+let pp_coreerlang_gen k mp rls =
+  match k with
+    | Cons -> dequalify rls
+    | x -> 
+      match rls with
+        | [] -> assert false
+        | s::rls' ->
+           let str = dottify rls' in
+           let prf = if base_mp mp <> top_visible_mp () then s ^ "." else ""
+           in prf ^ str
+
+
 (* Main name printing function for a reference *)
 
 let pp_global k r =
@@ -568,6 +585,7 @@ let pp_global k r =
     match lang () with
       | Scheme -> unquote s (* no modular Scheme extraction... *)
       | Haskell -> if modular () then pp_haskell_gen k mp rls else s
+      | CoreErlang -> if modular () then pp_coreerlang_gen k mp rls else s
       | Ocaml -> pp_ocaml_gen k mp rls (Some l)
 
 (* The next function is used only in Ocaml extraction...*)
@@ -596,6 +614,7 @@ let check_extract_ascii () =
     let char_type = match lang () with
       | Ocaml -> "char"
       | Haskell -> "Char"
+      | CoreErlang -> "char"
       | _ -> raise Not_found
     in
     find_custom (IndRef (ind_ascii,0)) = char_type

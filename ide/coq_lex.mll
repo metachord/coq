@@ -101,7 +101,7 @@ let multiword_command =
 | "Tactic" space+ "Notation"
 | "Implicit" space+ "Type" "s"?
 | "Combined" space+ "Scheme"
-| "Extraction" space+ (("Language" space+ ("Ocaml"|"Haskell"|"Scheme"|"Toplevel"))|
+| "Extraction" space+ (("Language" space+ ("Ocaml"|"Haskell"|"Scheme"|"CoreErlang"|"Toplevel"))|
     ("Library"|"Inline"|"NoInline"|"Blacklist"))
 | "Recursive" space+ "Extraction" (space+ "Library")?
 | ("Print"|"Reset") space+ "Extraction" space+ ("Inline"|"Blacklist")
